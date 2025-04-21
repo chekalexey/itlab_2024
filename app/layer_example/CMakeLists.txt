@@ -3,7 +3,7 @@ set(ARM_DIR "${CMAKE_SOURCE_DIR}/3rdparty/ComputeLibrary")
 file(MAKE_DIRECTORY "${ARM_DIR}/build")
 
 add_custom_command(
-    OUTPUT "${ARM_DIR}/build/libarm_compute.so"
+    OUTPUT "${ARM_DIR}/build/libarm_compute.a"
     COMMAND scons Werror=1 debug=0 asserts=0 neon=0 opencl=0 os=linux embed_kernels=1 arch=x86 -j4
     WORKING_DIRECTORY ${ARM_DIR}
 )
