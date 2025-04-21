@@ -8,7 +8,7 @@ add_custom_command(
     WORKING_DIRECTORY ${ARM_DIR}
 )
 
-add_custom_target(arm_compute_lib DEPENDS "${ARM_DIR}/build/libarm_compute.so")
+add_custom_target(arm_compute_lib DEPENDS "${ARM_DIR}/build/libarm_compute.a")
 
 add_executable(Conv ConvolutionLayer.cpp)
 
