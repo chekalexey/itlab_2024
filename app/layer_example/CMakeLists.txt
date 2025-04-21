@@ -4,7 +4,7 @@ file(MAKE_DIRECTORY "${ARM_DIR}/build")
 
 add_custom_command(
     OUTPUT "${ARM_DIR}/build/libarm_compute.so"
-    COMMAND scons Werror=1 -j8 debug=0 neon=0 opencl=1 os=linux arch=x86 build=native
+    COMMAND scons Werror=1 debug=0 asserts=0 neon=0 opencl=0 os=linux embed_kernels=1 arch=x86 -j4
     WORKING_DIRECTORY ${ARM_DIR}
 )
 
