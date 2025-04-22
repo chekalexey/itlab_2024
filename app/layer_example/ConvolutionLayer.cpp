@@ -11,7 +11,6 @@ int main(){
     Tensor bias;
     Tensor output;
 
-    const unsigned int N = 1;
     const unsigned int Hin = 3;
     const unsigned int Win = 3;
     const unsigned int Cin = 1;
