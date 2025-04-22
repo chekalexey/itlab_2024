@@ -4,7 +4,7 @@ add_executable(Conv ConvolutionLayer.cpp)
 
 include_directories(${ARM_DIR})
 include_directories(${ARM_DIR}/include)
-target_link_directories(MatMul PUBLIC ${ARM_DIR}/build)
+target_link_directories(Conv PUBLIC ${ARM_DIR}/build)
 
 target_link_libraries(Conv arm_compute)
 
