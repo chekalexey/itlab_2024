@@ -26,6 +26,7 @@ class Layer {
   virtual std::string getInfoString() const;
   virtual void exec(Tensor& input, Tensor& output) = 0;
   virtual void exec(Tensor& input1, Tensor& input2, Tensor& output) = 0;
+  virtual void exec() = 0;
   //virtual Shape get_output_shape() = 0;
 
   virtual std::string get_type_name() const = 0;

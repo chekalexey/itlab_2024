@@ -13,44 +13,36 @@ using namespace utils;
 
 class MatMulLayer : public Layer {
 private:
-    MatMulInfo matmul_info_;
-    TensorShape input_x_shape_;
-    TensorShape input_y_shape_;
-    TensorShape output_shape_;
+    NEMatMul m;
     bool configured_ = false;
 
 public:
-    MatMulLayer(int id, const MatMulInfo& info = MatMulInfo()) : matmul_info_(info) {
+    MatMulLayer(int id){
         setID(id);
     }
 
-    void configure(TensorShape& input_x_shape, TensorShape& input_y_shape, TensorShape& output_shape_ref) {
-        input_x_shape_ = input_x_shape;
-        input_y_shape_ = input_y_shape;
-        output_shape_ = output_shape_ref;
+    void configure(TensorShape& input_x_shape, TensorShape& input_y_shape, TensorShape& output_shape,
+        Tensor& input_x, Tensor& input_y, Tensor& output) {
 
+        input_x.allocator()->init(TensorInfo(input_x_shape, 1, DataType::F32));
+        input_y.allocator()->init(TensorInfo(input_y_shape, 1, DataType::F32));
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+
+        input_x.allocator()->allocate();
+        input_y.allocator()->allocate();
+        output.allocator()->allocate();
+        m.configure(&input_x, &input_y, &output, MatMulInfo(), CpuMatMulSettings(), ActivationLayerInfo());
         configured_ = true;
     }
 
-  void exec(Tensor& input_x, Tensor& input_y, Tensor& output) override {
-    if (!configured_) {
-      throw std::runtime_error("MatMulLayer: Layer not configured before exec.");
+    void exec() override {
+        if (!configured_) {
+            throw std::runtime_error("MatMulLayer: Layer not configured before exec.");
+        }
+        m.run();
     }
 
-    input_x.allocator()->init(TensorInfo(input_x_shape_, 1, DataType::F32));
-    input_y.allocator()->init(TensorInfo(input_y_shape_, 1, DataType::F32));
-    output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
-
-    input_x.allocator()->allocate();
-    input_y.allocator()->allocate();
-    output.allocator()->allocate();
-
-    NEMatMul m;
-    m.configure(&input_x, &input_y, &output, matmul_info_, CpuMatMulSettings(), ActivationLayerInfo());
-    m.run();
-  }
-
-  std::string get_type_name() const override { return "MatMulLayer"; }
+    std::string get_type_name() const override { return "MatMulLayer"; }
 };
 
 #endif

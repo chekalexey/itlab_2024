@@ -10,9 +10,7 @@
 
 class PoolingLayer : public Layer {
 private:
-    PoolingLayerInfo pool_info_;
-    TensorShape input_shape_;
-    TensorShape output_shape_;
+    NEPoolingLayer pool;
     bool configured_ = false;
 
 public:
@@ -20,36 +18,30 @@ public:
         setID(id);
     }
 
-    void configure(TensorShape& input_shape, PoolingLayerInfo pli = PoolingLayerInfo(PoolingType::MAX,  DataLayout::NHWC), TensorShape& output_shape_ref) {
+    void configure(TensorShape& input_shape, 
+        TensorShape& output_shape, Tensor& input, Tensor& output) {
         if (input_shape.num_dimensions() < 2) {
             throw std::runtime_error("PoolingLayer: Input must be at least 2D");
         }
-        pool_info_ = pli;
-        input_shape_ = input_shape;
-        output_shape_ = input_shape;
+        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        output_shape_ = output_shape_ref;
+        input.allocator()->allocate();
+        output.allocator()->allocate();
+
+        pool.configure(&input, &output, PoolingLayerInfo(PoolingType::MAX, DataLayout::NHWC));
 
         configured_ = true;
-  }
-
-  void exec(Tensor& input, Tensor& output) override {
-    if (!configured_) {
-      throw std::runtime_error("PoolingLayer: Layer not configured before exec.");
     }
 
-    input.allocator()->init(TensorInfo(input_shape_, 1, DataType::F32));
-    output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
+    void exec() override {
+        if (!configured_) {
+            throw std::runtime_error("PoolingLayer: Layer not configured before exec.");
+        }
+        pool.run();
+    }
 
-    input.allocator()->allocate();
-    output.allocator()->allocate();
-
-    NEPoolingLayer pool;
-    pool.configure(&input, &output, pool_info_);
-    pool.run();
-  }
-
-  std::string get_type_name() const override { return "PoolingLayer"; }
+    std::string get_type_name() const override { return "PoolingLayer"; }
 };
 
 #endif
