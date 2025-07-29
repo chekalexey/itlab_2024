@@ -8,45 +8,34 @@
 
 #include "include/layer/layer.h"
 
-class SliceLayer : public Layer {
- private:
-  TensorShape input_shape_config_;
-  TensorShape output_shape_;
-  Coordinates slice_starts_;
-  Coordinates slice_ends_;
-  bool configured_ = false;
+class SliceLayer : public Layer {   
+private:
+    NESlice slice;
+    bool configured_ = false;
 
- public:
-  SliceLayer(int id) { setID(id); }
+public:
+    SliceLayer(int id) { setID(id); }
 
-  void configure(const TensorShape& input_shape, Coordinates starts, Coordinates ends, TensorShape& output_shape_ref) {
-    input_shape_config_ = input_shape;
-    slice_starts_ = starts;
-    slice_ends_ = ends;
-    output_shape_ = output_shape_ref;
+    void configure(const TensorShape& input_shape, Coordinates starts, Coordinates ends, 
+        TensorShape& output_shape, Tensor& input, Tensor& output) {
 
-    configured_ = true;
-  }
+        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-  void exec(Tensor& input, Tensor& output) override {
-    if (!configured_) {
-      throw std::runtime_error("SliceLayer: Layer not configured.");
+        input.allocator()->allocate();
+        output.allocator()->allocate();
+
+        slice.configure(&input, &output, starts, ends);
+        configured_ = true;
     }
 
-    input.allocator()->init(TensorInfo(input_shape_config_, 1, DataType::F32));
-    output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
-
-    input.allocator()->allocate();
-    output.allocator()->allocate();
-
-    NESlice slice;
-    slice.configure(&input, &output, slice_starts_, slice_ends_);
-
-    slice.run();
-  }
-
-
-  std::string get_type_name() const override { return "SliceLayer"; }
+    void exec() override {
+        if (!configured_) {
+            throw std::runtime_error("SliceLayer: Layer not configured.");
+        }
+        slice.run();
+    }
+    std::string get_type_name() const override { return "SliceLayer"; }
 };
 
 #endif

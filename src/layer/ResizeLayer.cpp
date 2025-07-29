@@ -13,45 +13,36 @@ using namespace utils;
 
 class ResizeLayer : public Layer {
 private:
-  TensorShape input_shape_;
-  TensorShape output_shape_;
-  bool configured_ = false;
+    NEScale resize;
+    bool configured_ = false;
 
 public:
-  ResizeLayer(int id) { setID(id); }
+    ResizeLayer(int id) { setID(id); }
+    void configure(TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
+        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-  void configure(TensorShape& input_shape, TensorShape& output_shape) {
-    input_shape_ = input_shape;
-    output_shape_ = output_shape;
+        input.allocator()->allocate();
+        output.allocator()->allocate();
 
-    configured_ = true;
-  }
-
-  void exec(Tensor& input, Tensor& output) override {
-    if (!configured_) {
-      throw std::runtime_error(
-          "ResizeLayer: Layer not configured before exec.");
-    }
-
-    input.allocator()->init(TensorInfo(input_shape_, 1, DataType::F32));
-    output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
-
-    input.allocator()->allocate();
-    output.allocator()->allocate();
-
-    NEScale resize;
-    resize.configure(&input, &output,
+        resize.configure(&input, &output,
                      ScaleKernelInfo{
                          InterpolationPolicy::NEAREST_NEIGHBOR,
                          BorderMode::REPLICATE,
                          PixelValue(),
                          SamplingPolicy::CENTER,
                      });
+        configured_ = true;
+    }
 
-    resize.run();
-  }
+    void exec() override {
+        if (!configured_) {
+            throw std::runtime_error("ResizeLayer: Layer not configured before exec.");
+        }
+        resize.run();
+    }
 
-  std::string get_type_name() const override { return "ResizeLayer"; }
+    std::string get_type_name() const override { return "ResizeLayer"; }
 };
 
 #endif

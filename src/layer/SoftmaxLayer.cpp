@@ -13,34 +13,27 @@ using namespace utils;
 
 class SoftmaxLayer : public Layer {
 private:
-    TensorShape input_shape_;
-    TensorShape output_shape_;
+    NESoftmaxLayer m;
     bool configured_ = false;
 
 public:
     SoftmaxLayer(int id) { setID(id); }
 
-    void configure(TensorShape& input_shape, TensorShape& output_shape_ref) {
-        input_shape_ = input_shape;
-        output_shape_ = output_shape_ref;
-
-        configured_ = true;
-    }
-
-    void exec(Tensor& input, Tensor& output) override {
-        if (!configured_) {
-            throw std::runtime_error(
-          "SoftmaxLayer: Layer not configured before exec.");
-        }
-
-        input.allocator()->init(TensorInfo(input_shape_, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
+    void configure(TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
+        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
         input.allocator()->allocate();
         output.allocator()->allocate();
-
-        NESoftmaxLayer m;
+        
         m.configure(&input, &output);
+        configured_ = true;
+    }
+
+    void exec() override {
+        if (!configured_) {
+            throw std::runtime_error("SoftmaxLayer: Layer not configured before exec.");
+        }
         m.run();
     }
 

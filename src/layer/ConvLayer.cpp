@@ -10,64 +10,42 @@
 
 class ConvolutionLayer : public Layer {
 private:
-
-  TensorShape input_shape_;
-  TensorShape weights_shape_;
-  TensorShape biases_shape_;
-  TensorShape output_shape_;
-  Tensor* biase_t;
-  Tensor* weight_t;
-  PadStrideInfo psi;
-
-  bool configured_ = false;
+    NEConvolutionLayer conv;
+    bool configured_ = false;
 
 public:
-  ConvolutionLayer(int id) { setID(id); }
+    ConvolutionLayer(int id) { setID(id); }
 
-  void configure(
-      const TensorShape& input_s,    
-      const TensorShape& weights_s,
-      Tensor& weights_t,
-      const TensorShape& biases_s,
-      Tensor& biases_t,
-      TensorShape& output_s_ref,
-      const PadStrideInfo& info
-  ) {
+    void configure(
+        const TensorShape& input_shape,    
+        const TensorShape& weights_shape,
+        const TensorShape& biases_shape,
+        TensorShape& output_shape,
+        const PadStrideInfo& info,
+        Tensor& input,
+        Tensor& weights,
+        Tensor& biases,
+        Tensor& output
+    ) {
 
-    input_shape_ = input_s;
-    weights_shape_ = weights_s;
-    biases_shape_ = biases_s;
-    psi = info;
-    output_shape_ = output_s_ref;
+        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+        weights.allocator()->init(TensorInfo(weights_shape, 1, DataType::F32));
+        biases.allocator()->init(TensorInfo(biases_shape, 1, DataType::F32));
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-    NECopy copyb, copyw;
-    copyb.configure(biase_t, &biases_t);
-    copyb.run();
-    copyw.configure(weight_t, &weights_t);
-    copyw.run();
+        input.allocator()->allocate();
+        weights.allocator()->allocate();
+        biases.allocator()->allocate();
+        output.allocator()->allocate();
+        
+        conv.configure(&input, &weights, &biases, &output, info);
+        configured_ = true;
+    }
 
-    weight_t->allocator()->init(TensorInfo(weights_shape_, 1, DataType::F32));
-    biase_t->allocator()->init(TensorInfo(biases_shape_, 1, DataType::F32));
-
-    weight_t->allocator()->allocate();
-    biase_t->allocator()->allocate();
-
-    configured_ = true;
-  }
-
-    void exec(Tensor& input, Tensor& output) override {
+    void exec() override {
         if (!configured_) {
             throw std::runtime_error("ConvolutionLayer: Layer not configured.");
         }
-
-        input.allocator()->init(TensorInfo(input_shape_, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
-
-        input.allocator()->allocate();
-        output.allocator()->allocate();
-
-        NEConvolutionLayer conv;
-        conv.configure(&input, weight_t, biase_t, &output, psi);
         conv.run();
     }
 

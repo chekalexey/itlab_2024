@@ -9,46 +9,44 @@
 #include "include/layer/layer.h"
 
 class ConcatenateLayer : public Layer {
- private:
-  std::vector<TensorShape> input_shapes_config_;
-  TensorShape output_shape_;
-  unsigned int concatenation_axis_;
-  bool configured_ = false;
-
- public:
-  ConcatenateLayer(int id) { setID(id); }
-
-  void configure(const std::vector<TensorShape>& inputs_shapes, unsigned int axis, TensorShape& output_shape_ref) {
-    if (inputs_shapes.empty()) {
-      throw std::runtime_error("Concat: Input shapes list cannot be empty.");
-    }
-
-    input_shapes_config_ = inputs_shapes;
-    concatenation_axis_ = axis;
-    output_shape_ = output_shape_ref;
-    configured_ = true;
-  }
-
-  void exec(std::vector<const ITensor*>& input, Tensor& output) {
-    if (!configured_) {
-      throw std::runtime_error("ConcatenateLayer: Layer not configured.");
-    }
-    if (input.size() != input_shapes_config_.size()) {
-      throw std::runtime_error("ConcatenateLayer: different sizes of vectors.");
-    }
-
-    output.allocator()->init(TensorInfo(output_shape_, 1, DataType::F32));
-
+private:
     NEConcatenateLayer concat;
-    concat.configure(input, &output, concatenation_axis_);
-    output.allocator()->allocate();
+    bool configured_ = false;
 
-    concat.run();
-  }
+public:
+    ConcatenateLayer(int id) { setID(id); }
 
-  std::string get_type_name() const override {
-    return "ConcatenateLayer";
-  }
+    void configure(const std::vector<TensorShape>& inputs_shapes, unsigned int axis, TensorShape& output_shape, 
+        std::vector<Tensor*>& input, Tensor& output) {
+
+        if (inputs_shapes.empty()) {
+            throw std::runtime_error("Concat: Input shapes list cannot be empty.");
+        }
+        if (inputs_shapes.size() != input.size()) {
+            throw std::runtime_error("Concat: vector size mismatch.");
+        }
+        std::vector<const ITensor*> inpcopy;
+        for (int i = 0; i < input.size(); i++) {
+            input[i]->allocator()->init(TensorInfo(inputs_shapes[i], 1, DataType::F32));
+            input[i]->allocator()->allocate();
+            inpcopy.push_back(input[i]);
+        }
+        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+        concat.configure(inpcopy, &output, axis);
+        output.allocator()->allocate();
+        configured_ = true;
+    }
+
+    void exec() override {
+        if (!configured_) {
+            throw std::runtime_error("ConcatenateLayer: Layer not configured.");
+        }
+        concat.run();
+    }
+
+    std::string get_type_name() const override {
+        return "ConcatenateLayer";
+    }
 };
 
 #endif
