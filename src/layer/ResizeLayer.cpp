@@ -17,7 +17,7 @@ private:
     bool configured_ = false;
 
 public:
-    ResizeLayer(int id) { setID(id); }
+    ResizeLayer(int id) : Layer(id) {  }
     void configure(TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
         input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
         output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));

@@ -14,7 +14,7 @@ private:
     bool configured_ = false;
 
 public:
-    ConcatenateLayer(int id) { setID(id); }
+    ConcatenateLayer(int id): Layer(id) { }
 
     void configure(const std::vector<TensorShape>& inputs_shapes, unsigned int axis, TensorShape& output_shape, 
         std::vector<Tensor*>& input, Tensor& output) {

@@ -14,7 +14,7 @@ private:
     bool configured_ = false;
 
 public:
-    ConvolutionLayer(int id) { setID(id); }
+    ConvolutionLayer(int id) : Layer(id) { }
 
     void configure(
         const TensorShape& input_shape,    

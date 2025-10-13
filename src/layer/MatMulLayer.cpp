@@ -17,9 +17,7 @@ private:
     bool configured_ = false;
 
 public:
-    MatMulLayer(int id){
-        setID(id);
-    }
+    MatMulLayer(int id) : Layer(id) { };
 
     void configure(TensorShape& input_x_shape, TensorShape& input_y_shape, TensorShape& output_shape,
         Tensor& input_x, Tensor& input_y, Tensor& output) {

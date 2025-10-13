@@ -14,9 +14,7 @@ private:
     bool configured_ = false;
 
 public:
-    PoolingLayer(int id) {
-        setID(id);
-    }
+    PoolingLayer(int id) : Layer(id) { }
 
     void configure(TensorShape& input_shape, 
         TensorShape& output_shape, Tensor& input, Tensor& output) {

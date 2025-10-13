@@ -30,7 +30,7 @@ private:
     bool configured_ = false;
 
 public:
-    ElementwiseLayer(int id, ElementwiseOp op) : op_type(op) { setID(id); }
+    ElementwiseLayer(int id, ElementwiseOp op) : op_type(op), Layer(id) { }
 
     ElementwiseLayer() : ElementwiseLayer(0, ElementwiseOp::ADD) { }
 

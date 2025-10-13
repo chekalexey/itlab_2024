@@ -14,7 +14,7 @@ private:
     bool configured_ = false;
 
 public:
-    SliceLayer(int id) { setID(id); }
+    SliceLayer(int id):Layer(id) {  }
 
     void configure(const TensorShape& input_shape, Coordinates starts, Coordinates ends, 
         TensorShape& output_shape, Tensor& input, Tensor& output) {

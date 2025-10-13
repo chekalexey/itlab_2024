@@ -17,9 +17,7 @@ private:
     bool configured_ = false;
 
 public:
-    TransposeLayer(int id) {
-        setID(id);
-    }
+    TransposeLayer(int id):Layer(id) { }
 
     void configure(TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
         input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));

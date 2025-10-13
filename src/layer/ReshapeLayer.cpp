@@ -14,7 +14,7 @@ private:
     bool configured_ = false;
 
 public:
-    ReshapeLayer(int id) { setID(id); }
+    ReshapeLayer(int id) : Layer(id) {  }
 
     void configure(const TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
         input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));

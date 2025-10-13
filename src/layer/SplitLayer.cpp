@@ -14,7 +14,7 @@ private:
     bool configured_ = false;
 
 public:
-    SplitLayer(int id) { setID(id); }
+    SplitLayer(int id):Layer(id) {  }
 
     void configure(const TensorShape& input_shape, unsigned int axis, Tensor& input, std::vector<ITensor*>& outputs) {
         input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
