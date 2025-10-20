@@ -11,14 +11,7 @@
 using namespace arm_compute;
 using namespace utils;
 
-enum class ElementwiseOp {
-    ADD,
-    DIV,
-    ABS,
-    SIGM,
-    SWISH,
-    SQUARED_DIFF
-};
+enum class ElementwiseOp { ADD, DIV, ABS, SIGM, SWISH, SQUARED_DIFF };
 
 class ElementwiseLayer : public Layer {
 private:
@@ -35,68 +28,97 @@ public:
     ElementwiseLayer() : ElementwiseLayer(0, ElementwiseOp::ADD) { }
 
     void configure(const TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
-        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
-
-        input.allocator()->allocate();
-        output.allocator()->allocate();
-
-        switch (op_type) {
+        try {
+            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+            
+            input.allocator()->allocate();
+            output.allocator()->allocate();
+            switch (op_type) {
             case ElementwiseOp::ABS: {
+                if (!NEActivationLayer::validate(input.info(), output.info(), 
+                    ActivationLayerInfo(ActivationLayerInfo::ActivationFunction::ABS))) {
+                    throw std::runtime_error("AbsLayer: Validation failed");
+                }
+
+
                 act.configure(&input, &output, ActivationLayerInfo(ActivationLayerInfo::ActivationFunction::ABS));
-                act.run();
                 break;
             }
             case ElementwiseOp::SIGM: {
+                if (!NEActivationLayer::validate(input.info(), output.info(), 
+                    ActivationLayerInfo(ActivationLayerInfo::ActivationFunction::LOGISTIC))) {
+                    throw std::runtime_error("SigmoidLayer: Validation failed");
+                }
+
                 act.configure(&input, &output, ActivationLayerInfo(ActivationLayerInfo::ActivationFunction::LOGISTIC));
-                act.run();
                 break;
             }
             case ElementwiseOp::SWISH: {
+                if (!NEActivationLayer::validate(input.info(), output.info(), 
+                    ActivationLayerInfo(ActivationLayerInfo::ActivationFunction::SWISH))) {
+                    throw std::runtime_error("SwishLayer: Validation failed");
+                }
+
                 act.configure(&input, &output, ActivationLayerInfo(ActivationLayerInfo::ActivationFunction::SWISH));
-                act.run();
                 break;
             }
             default:
                 throw std::runtime_error("ElementwiseLayer: This operation requires two inputs");
+            }
+            configured_ = true;
         }
-        configured_ = true;
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "ElementwiseLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void configure(const TensorShape& input1_shape, const TensorShape& input2_shape, TensorShape& output_shape, 
         Tensor& input1, Tensor& input2, Tensor& output) {
-        if (input1_shape.total_size() != input2_shape.total_size()) {
-            throw std::runtime_error(
-                "ElementwiseLayer: Input shapes must have same total size");
-        }
-        input1.allocator()->init(TensorInfo(input1_shape, 1, DataType::F32));
-        input2.allocator()->init(TensorInfo(input2_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+        try {
+            input1.allocator()->init(TensorInfo(input1_shape, 1, DataType::F32));
+            input2.allocator()->init(TensorInfo(input2_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        input1.allocator()->allocate();
-        input2.allocator()->allocate();
-        output.allocator()->allocate();
-
-        switch (op_type) {
+            input1.allocator()->allocate();
+            input2.allocator()->allocate();
+            output.allocator()->allocate();
+            switch (op_type) {
             case ElementwiseOp::ADD: {
+                if (!NEArithmeticAddition::validate(input1.info(), input2.info(), output.info(), ConvertPolicy::WRAP)) {
+                    throw std::runtime_error("AddLayer: Validation failed");
+                }
+                
+
                 add.configure(&input1, &input2, &output, ConvertPolicy::WRAP);
-                add.run();
                 break;
             }
             case ElementwiseOp::DIV: {
+                if (!NEElementwiseDivision::validate(input1.info(), input2.info(), output.info())) {
+                    throw std::runtime_error("DivLayer: Validation failed");
+                }
+
                 div.configure(&input1, &input2, &output);
-                div.run();
                 break;
             }
             case ElementwiseOp::SQUARED_DIFF: {
+                if (!NEElementwiseSquaredDiff::validate(input1.info(), input2.info(), output.info())) {
+                    throw std::runtime_error("SquaredDiffLayer: Validation failed");
+                }
+
                 sqdiff.configure(&input1, &input2, &output);
-                sqdiff.run();
                 break;
             }
             default:
                 throw std::runtime_error("ElementwiseLayer: This operation requires single input");
+            }
+            configured_ = true;
         }
-        configured_ = true;
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "ElementwiseLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void exec() override {

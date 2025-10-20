@@ -18,15 +18,24 @@ public:
 
     void configure(const TensorShape& input_shape, Coordinates starts, Coordinates ends, 
         TensorShape& output_shape, Tensor& input, Tensor& output) {
+        try {
+            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+            if (!NESlice::validate(input.info(), output.info(), starts, ends)) {
+                throw std::runtime_error("SliceLayer: Validation failed");
+            }
 
-        input.allocator()->allocate();
-        output.allocator()->allocate();
+            input.allocator()->allocate();
+            output.allocator()->allocate();
 
-        slice.configure(&input, &output, starts, ends);
-        configured_ = true;
+            slice.configure(&input, &output, starts, ends);
+            configured_ = true;
+        }
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "SliceLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void exec() override {

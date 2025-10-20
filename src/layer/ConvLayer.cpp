@@ -27,19 +27,28 @@ public:
         Tensor& biases,
         Tensor& output
     ) {
+        try {
+            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+            weights.allocator()->init(TensorInfo(weights_shape, 1, DataType::F32));
+            biases.allocator()->init(TensorInfo(biases_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-        weights.allocator()->init(TensorInfo(weights_shape, 1, DataType::F32));
-        biases.allocator()->init(TensorInfo(biases_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+            if (!NEConvolutionLayer::validate(input.info(), weights.info(), biases.info(), output.info(), info)) {
+                throw std::runtime_error("ConvolutionLayer: Validation failed");
+            }
 
-        input.allocator()->allocate();
-        weights.allocator()->allocate();
-        biases.allocator()->allocate();
-        output.allocator()->allocate();
-        
-        conv.configure(&input, &weights, &biases, &output, info);
-        configured_ = true;
+            input.allocator()->allocate();
+            weights.allocator()->allocate();
+            biases.allocator()->allocate();
+            output.allocator()->allocate();
+
+            conv.configure(&input, &weights, &biases, &output, info);
+            configured_ = true;
+        }
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "ConvolutionLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void exec() override {

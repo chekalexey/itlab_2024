@@ -18,18 +18,26 @@ public:
 
     void configure(TensorShape& input_shape, 
         TensorShape& output_shape, Tensor& input, Tensor& output) {
-        if (input_shape.num_dimensions() < 2) {
-            throw std::runtime_error("PoolingLayer: Input must be at least 2D");
+        try {
+            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+
+            if (!NEPoolingLayer::validate(input.info(), output.info(), PoolingLayerInfo(PoolingType::MAX, DataLayout::NHWC))) {
+                throw std::runtime_error("PoolingLayer: Validation failed");
+            }
+
+            input.allocator()->allocate();
+            output.allocator()->allocate();
+
+            pool.configure(&input, &output, PoolingLayerInfo(PoolingType::MAX, DataLayout::NHWC));
+            
+            configured_ = true;
         }
-        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
-
-        input.allocator()->allocate();
-        output.allocator()->allocate();
-
-        pool.configure(&input, &output, PoolingLayerInfo(PoolingType::MAX, DataLayout::NHWC));
-
-        configured_ = true;
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "PoolingLayer configuration error: " << e.what() << std::endl;
+        }
+        
     }
 
     void exec() override {

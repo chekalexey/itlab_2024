@@ -18,23 +18,32 @@ public:
 
     void configure(const std::vector<TensorShape>& inputs_shapes, unsigned int axis, TensorShape& output_shape, 
         std::vector<Tensor*>& input, Tensor& output) {
+        try {
+            std::vector<const ITensor*> inpcopy;
+            std::vector<const ITensorInfo*> inp_info;
 
-        if (inputs_shapes.empty()) {
-            throw std::runtime_error("Concat: Input shapes list cannot be empty.");
+            for (int i = 0; i < input.size(); i++) {
+                input[i]->allocator()->init(TensorInfo(inputs_shapes[i], 1, DataType::F32));
+                input[i]->allocator()->allocate();
+                inp_info.push_back(input[i]->info());
+                inpcopy.push_back(input[i]);
+            }
+
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+
+            if (!NEConcatenateLayer::validate(inp_info, output.info(), axis)) {
+                throw std::runtime_error("ConcatenateLayer: Validation failed");
+            }
+
+            output.allocator()->allocate();
+            concat.configure(inpcopy, &output, axis);
+            
+            configured_ = true;
         }
-        if (inputs_shapes.size() != input.size()) {
-            throw std::runtime_error("Concat: vector size mismatch.");
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "ConcatenateLayer configuration error: " << e.what() << std::endl;
         }
-        std::vector<const ITensor*> inpcopy;
-        for (int i = 0; i < input.size(); i++) {
-            input[i]->allocator()->init(TensorInfo(inputs_shapes[i], 1, DataType::F32));
-            input[i]->allocator()->allocate();
-            inpcopy.push_back(input[i]);
-        }
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
-        concat.configure(inpcopy, &output, axis);
-        output.allocator()->allocate();
-        configured_ = true;
     }
 
     void exec() override {

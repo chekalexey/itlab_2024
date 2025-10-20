@@ -20,14 +20,24 @@ public:
     TransposeLayer(int id):Layer(id) { }
 
     void configure(TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
-        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+        try {
+            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        input.allocator()->allocate();
-        output.allocator()->allocate();
+            if (!NETranspose::validate(input.info(), output.info())) {
+                throw std::runtime_error("TransposeLayer: Validation failed");
+            }
 
-        t.configure(&input, &output);
-        configured_ = true;
+            input.allocator()->allocate();
+            output.allocator()->allocate();
+
+            t.configure(&input, &output);
+            configured_ = true;
+        }
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "TransposeLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void exec() override {

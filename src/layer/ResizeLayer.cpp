@@ -19,20 +19,31 @@ private:
 public:
     ResizeLayer(int id) : Layer(id) {  }
     void configure(TensorShape& input_shape, TensorShape& output_shape, Tensor& input, Tensor& output) {
-        input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+        try {
+            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        input.allocator()->allocate();
-        output.allocator()->allocate();
+            if (!NEScale::validate(input.info(), output.info(), ScaleKernelInfo{ InterpolationPolicy::NEAREST_NEIGHBOR,
+                    BorderMode::REPLICATE, PixelValue(), SamplingPolicy::CENTER})) {
+                throw std::runtime_error("ResizeLayer: Validation failed");
+            }
 
-        resize.configure(&input, &output,
-                     ScaleKernelInfo{
-                         InterpolationPolicy::NEAREST_NEIGHBOR,
-                         BorderMode::REPLICATE,
-                         PixelValue(),
-                         SamplingPolicy::CENTER,
-                     });
-        configured_ = true;
+            input.allocator()->allocate();
+            output.allocator()->allocate();
+
+            resize.configure(&input, &output,
+                ScaleKernelInfo{
+                    InterpolationPolicy::NEAREST_NEIGHBOR,
+                    BorderMode::REPLICATE,
+                    PixelValue(),
+                    SamplingPolicy::CENTER
+                });
+            configured_ = true;
+        }
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "ResizeLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void exec() override {

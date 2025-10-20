@@ -22,15 +22,26 @@ public:
     void configure(TensorShape& input_x_shape, TensorShape& input_y_shape, TensorShape& output_shape,
         Tensor& input_x, Tensor& input_y, Tensor& output) {
 
-        input_x.allocator()->init(TensorInfo(input_x_shape, 1, DataType::F32));
-        input_y.allocator()->init(TensorInfo(input_y_shape, 1, DataType::F32));
-        output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
+        try {
+            input_x.allocator()->init(TensorInfo(input_x_shape, 1, DataType::F32));
+            input_y.allocator()->init(TensorInfo(input_y_shape, 1, DataType::F32));
+            output.allocator()->init(TensorInfo(output_shape, 1, DataType::F32));
 
-        input_x.allocator()->allocate();
-        input_y.allocator()->allocate();
-        output.allocator()->allocate();
-        m.configure(&input_x, &input_y, &output, MatMulInfo(), CpuMatMulSettings(), ActivationLayerInfo());
-        configured_ = true;
+            if (!NEMatMul::validate(input_x.info(), input_y.info(), output.info(), MatMulInfo(), CpuMatMulSettings(), ActivationLayerInfo())) {
+                throw std::runtime_error("MatMulLayer: Validation failed");
+            }
+
+            input_x.allocator()->allocate();
+            input_y.allocator()->allocate();
+            output.allocator()->allocate();
+
+            m.configure(&input_x, &input_y, &output, MatMulInfo(), CpuMatMulSettings(), ActivationLayerInfo());
+            configured_ = true;
+        }
+        catch (const std::exception& e) {
+            configured_ = false;
+            std::cerr << "MatMulLayer configuration error: " << e.what() << std::endl;
+        }
     }
 
     void exec() override {
