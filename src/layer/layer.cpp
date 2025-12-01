@@ -1,4 +1,4 @@
-#include "include/layer/layer.h"
+#include "layer/layer.h"
 
 void Layer::addNeighbor(Layer* neighbor) {
   if (neighbor != nullptr) {

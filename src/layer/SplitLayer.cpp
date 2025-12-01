@@ -1,54 +1,53 @@
 #ifndef ACL_SPLIT_LAYER_H
 #define ACL_SPLIT_LAYER_H
 
-#include <numeric>
+#include <exception>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
-#include "include/layer/layer.h"
+#include "layer/layer.h"
 
 class SplitLayer : public Layer {
-private:
-    NESplit split;
-    bool configured_ = false;
+ private:
+  NESplit split_;
+  bool configured_ = false;
 
-public:
-    SplitLayer(int id):Layer(id) {  }
+ public:
+  SplitLayer(int id) : Layer(id) {}
 
-    void configure(const TensorShape& input_shape, unsigned int axis, Tensor& input, std::vector<ITensor*>& outputs) {
-        try {
-            input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
-            input.allocator()->allocate();
+  void configure(const TensorShape& input_shape, unsigned int axis,
+                 Tensor& input, std::vector<ITensor*>& outputs) {
+    try {
+      input.allocator()->init(TensorInfo(input_shape, 1, DataType::F32));
+      input.allocator()->allocate();
 
-            std::vector<ITensorInfo*> outputs_info;
-            for (auto& output : outputs) {
-                if (output != nullptr) {
-                    outputs_info.push_back(output->info());
-                }
-            }
-
-            if (!NESplit::validate(input.info(), outputs_info, axis)) {
-                throw std::runtime_error("SplitLayer: Validation failed");
-            }
-
-            split.configure(&input, outputs, axis);
-            configured_ = true;
+      std::vector<ITensorInfo*> outputs_info;
+      for (auto& output : outputs) {
+        if (output != nullptr) {
+          outputs_info.push_back(output->info());
         }
-        catch (const std::exception& e) {
-            configured_ = false;
-            std::cerr << "SplitLayer configuration error: " << e.what() << std::endl;
-        }
+      }
+
+      if (!NESplit::validate(input.info(), outputs_info, axis)) {
+        throw std::runtime_error("SplitLayer: Validation failed");
+      }
+
+      split_.configure(&input, outputs, axis);
+      configured_ = true;
+    } catch (const std::exception& e) {
+      configured_ = false;
+      std::cerr << "SplitLayer configuration error: " << e.what() << std::endl;
     }
+  }
 
-    void exec() override {
-        if (!configured_) {
-            throw std::runtime_error("SplitLayer: Layer not configured.");
-        }
-        split.run();
+  void exec() override {
+    if (!configured_) {
+      throw std::runtime_error("SplitLayer: Layer not configured.");
     }
+    split_.run();
+  }
 
-    std::string get_type_name() const override { return "SplitLayer"; }
+  std::string get_type_name() const override { return "SplitLayer"; }
 };
 
 #endif
