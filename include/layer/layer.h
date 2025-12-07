@@ -2,12 +2,7 @@
 #define LAYER_H
 
 #include <list>
-
-#include "arm_compute/runtime/NEON/NEFunctions.h"
-#include "utils/Utils.h"
-
-using namespace arm_compute;
-using namespace utils;
+#include <string>
 
 struct LayerAttributes {
   int id = -1;

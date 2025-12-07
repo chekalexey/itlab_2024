@@ -10,7 +10,14 @@
 using namespace arm_compute;
 using namespace utils;
 
-enum class ElementwiseOp { kAdd, kDiv, kAbs, kSigm, kSwish, kSquaredDiff };
+enum class ElementwiseOp : std::uint8_t {
+  kAdd,
+  kDiv,
+  kAbs,
+  kSigm,
+  kSwish,
+  kSquaredDiff
+};
 
 class ElementwiseLayer : public Layer {
  private:
